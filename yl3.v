@@ -19,17 +19,17 @@ module driver_yl3(
   input [63:0] data,   // All 8 Characters (8 x 8 bits)
   input        load,   // Load the data in
 
-  output       ready,     // Ready for input to be loaded
-  output       sda,
-  output       sclk,
-  output       slatch
+  output       ready,  // Ready for input to be loaded
+  output       sda,    // Serial data output
+  output       sclk,   // Serial data clock
+  output       slatch  // Serial latch (Display 
 );
 
-  localparam  DELAY_CNT    = 4'd1;        // "Clock Divider"
-  localparam  ST_READY     = 2'b00;       // Ready to load data
-  localparam  ST_READCHR   = 2'b01;       // Read Character
-  localparam  ST_SHIFT     = 2'b10;       // Shift Character
-  localparam  ST_LATCH     = 2'b11;
+  localparam  DELAY_CNT    = 4'd1;       // "Clock Divider"
+  localparam  ST_READY     = 2'b00;      // Ready to load data
+  localparam  ST_READCHR   = 2'b01;      // Read Character
+  localparam  ST_SHIFT     = 2'b10;      // Shift Character
+  localparam  ST_LATCH     = 2'b11;      // Serial latch
   
   reg  [7:0]  chrarr [0:7];              // 8 Character array
   reg  [3:0]  aidx;                      // Index of our array
@@ -82,10 +82,9 @@ module driver_yl3(
 
           // Deal with states
           case(state)
+            // Read to Load data, so lets do so
             ST_READY:
               begin
-                //loaded <= 1'b0;
-
                 if(load == 1)
                   begin
                     if({chrarr[0], chrarr[1], chrarr[2], chrarr[3], chrarr[4], chrarr[5], chrarr[6], chrarr[7]} != data)
@@ -110,6 +109,7 @@ module driver_yl3(
                       end
                   end
               end
+            // Read the character from memory, convert it to 16 bit binary for position and 7-Segment leds.
             ST_READCHR:
               begin
                 //$display("DATAOUT: %b", dataout);
@@ -325,6 +325,7 @@ module driver_yl3(
                     state   <= ST_SHIFT;
                   end          
               end
+            // Lets shift the data on to the SDA bus.
             ST_SHIFT:
               begin
                 if(shift_flag)
@@ -345,6 +346,7 @@ module driver_yl3(
                       end
                   end
                 end
+            // Set the latch, make the YL-3 display the data
             ST_LATCH:
               begin
                 if(lchcnt < 2)
