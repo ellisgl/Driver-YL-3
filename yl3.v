@@ -84,7 +84,7 @@ module driver_yl3(
           case(state)
             ST_READY:
               begin
-                loaded <= 1'b0;
+                //loaded <= 1'b0;
 
                 if(load == 1)
                   begin
