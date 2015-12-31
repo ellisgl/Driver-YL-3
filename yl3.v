@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 /**
  * YL-3 Driver (http://www.dx.com/p/diy8-x-seven-segment-displays-module-for-arduino-595-driver-250813#.VoG5SPkrKHs)
- * Modules based on driver_74hc595.v from Crazy_Bingo
+ * Modules based on diver_74hc595.v from Crazy_Bingo
  * clk    = Clock from FPGA (50 MHz - Mojo V3)
  * rst_n  = reset (inverted)
  * data   = 8x8 (64 bits of the array)
@@ -46,7 +46,7 @@ module driver_yl3(
   wire shift_clk           = (delaycnt > DELAY_CNT / 2) ? 1'b1 : 1'b0;
 
   // Load our data
-  always @(posedge clk or negedge rst_n)
+  always @(posedge clk)
     begin
       if(!rst_n)
         begin
@@ -344,13 +344,7 @@ module driver_yl3(
                         state  <= ST_SHIFT;
                       end
                   end
-                else
-                   begin
-                     // Is this else needed? Delay or sorts?
-                     bitcnt <= bitcnt;
-                     state  <= state;
-                   end
-              end
+                end
             ST_LATCH:
               begin
                 if(lchcnt < 2)
