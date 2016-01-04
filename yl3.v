@@ -20,12 +20,12 @@ module driver_yl3(
   input        load,   // Load the data in
 
   output       ready,  // Ready for input to be loaded
-  output       sda,    // Serial data output
-  output       sclk,   // Serial data clock
-  output       slatch  // Serial latch (Display 
+  output reg   sda,    // Serial data output
+  output reg   sclk,   // Serial data clock
+  output reg   slatch  // Serial latch (Display 
 );
 
-  localparam  DELAY_CNT    = 4'd1;       // "Clock Divider"
+  localparam  DELAY_CNT    = 4'd5;       // "Clock Divider"
   localparam  ST_READY     = 2'b00;      // Ready to load data
   localparam  ST_READCHR   = 2'b01;      // Read Character
   localparam  ST_SHIFT     = 2'b10;      // Shift Character
@@ -36,57 +36,54 @@ module driver_yl3(
   reg  [7:0]  posreg;                    // Position on display
   reg  [7:0]  chrreg;                    // Character in .GFEDBC inverse binary
   reg  [15:0] dataout;                   // Concatinated position and character data to output to YL-3
-  reg  [4:0]  delaycnt;                  // Clock divider
+  reg  [3:0]  delaycnt;                  // Clock divider
   reg  [4:0]  bitcnt;                    // Counter / state-machine for which bit has been shifted
   reg  [2:0]  lchcnt;                    // Counter for holding the latch high.
   reg  [1:0]  state;                     // Our current state
   reg         loaded;                    // Data is loaded
-
-  wire shift_flag          = (delaycnt == DELAY_CNT)    ? 1'b1 : 1'b0;
-  wire shift_clk           = (delaycnt > DELAY_CNT / 2) ? 1'b1 : 1'b0;
 
   // Load our data
   always @(posedge clk)
     begin
       if(!rst_n)
         begin
-          state     <= ST_READY;
-          chrarr[0]  = 0;
-          chrarr[1]  = 0;
-          chrarr[2]  = 0;
-          chrarr[3]  = 0;
-          chrarr[4]  = 0;
-          chrarr[5]  = 0;
-          chrarr[6]  = 0;
-          chrarr[7]  = 0;
-          aidx      <= 4'b0;
-          posreg    <= 8'b0;
-          chrreg    <= 8'b0;
-          dataout   <= 16'b1111_1111_1111_1111;
-          delaycnt  <= 4'b0;
-          lchcnt    <= 3'b0;
-          bitcnt    <= 5'b0;
-          loaded    <= 1'b0;
+          state      <= ST_READY;
+          chrarr[0]   = 0;
+          chrarr[1]   = 0;
+          chrarr[2]   = 0;
+          chrarr[3]   = 0;
+          chrarr[4]   = 0;
+          chrarr[5]   = 0;
+          chrarr[6]   = 0;
+          chrarr[7]   = 0;
+          aidx       <= 4'b0;
+          posreg     <= 8'b0;
+          chrreg     <= 8'b0;
+          dataout    <= 16'b1111_1111_1111_1111;
+          delaycnt   <= 4'b0;
+          lchcnt     <= 3'b0;
+          bitcnt     <= 5'b0;
+          loaded     <= 1'b0;
+          sda        <= 1'b0;
+          sclk       <= 1'b0;
+          slatch     <= 1'b0;
         end
       else
         begin
-          // Divide clock for serial data clock.
-          if(state == ST_SHIFT)
+          if(state != ST_SHIFT)
             begin
-              delaycnt <= (delaycnt == DELAY_CNT) ? 4'b0 : delaycnt + 1'b1;
-            end
-          else
-            begin
-              delaycnt <= 4'b0;
+              delaycnt   <= 4'b0;
+              sclk       <= 1'b0;
             end
 
-          // Deal with states
+          // Deal with the states
           case(state)
-            // Read to Load data, so lets do so
             ST_READY:
               begin
+                // Read to Load data, so lets do so
                 if(load == 1)
                   begin
+                    //$display("ST_READY STATE -  LOAD = 1");
                     if({chrarr[0], chrarr[1], chrarr[2], chrarr[3], chrarr[4], chrarr[5], chrarr[6], chrarr[7]} != data)
                       begin
                         //$display("NEEDS TO LOAD DATA");
@@ -109,11 +106,14 @@ module driver_yl3(
                       end
                   end
               end
-            // Read the character from memory, convert it to 16 bit binary for position and 7-Segment leds.
+
             ST_READCHR:
               begin
+                // Read the character from memory, convert it to 16 bit binary for position and 7-Segment leds.
                 //$display("DATAOUT: %b", dataout);
                 //$display("POSCHR : %b", {posreg, chrreg});
+                delaycnt <= 4'b0;
+
                 if({posreg, chrreg} != dataout)
                   begin
                     //$display("DATAOUT NEEDS TO BE CREATED!");
@@ -325,50 +325,87 @@ module driver_yl3(
                     state   <= ST_SHIFT;
                   end          
               end
-            // Lets shift the data on to the SDA bus.
+
             ST_SHIFT:
               begin
-                if(shift_flag)
+                // Lets shift the data on to the SDA bus.
+                
+                // Divide clock for serial data clock and serial data out.
+                // Deal with states
+                // 'Shift Flag'
+                if(delaycnt == DELAY_CNT - 1'b1 && !sclk)
                   begin
-                    if(bitcnt == 16)
-                      begin
-                        //$display("ST_SHIFT -> ST_LATCH");
-                        bitcnt <= 0;
-                        state  <= ST_LATCH;
-                      end
-                    else
+                    if(bitcnt < 16)
                       begin
                         //$display("ST_SHIFT -> ST_SHIFT");
                         //$display("BITCNT: %d", bitcnt);
                         //$display("DATAOUT[%d]: %b", 15-bitcnt, dataout[15-bitcnt]);
-                        bitcnt <= bitcnt + 1'b1;
+                        sda    <= dataout[8'd15 - bitcnt]; // Output bit to SDA
+                        bitcnt <= bitcnt + 1'b1;           // Increment our bit position counter
+                        
+                        // Send next bit
                         state  <= ST_SHIFT;
                       end
+                    else
+                      begin
+                        //$display("ST_SHIFT -> ST_LATCH");
+                        // Reset counters and SDA
+                        bitcnt   <= 1'b0;
+                        delaycnt <= 1'b0;
+                        sda      <= 1'b0;
+                        
+                        // Latch our data.
+                        state    <= ST_LATCH;
+                      end
                   end
+
+                  // SCLK - Seral Data Clock (Divided from main clk)
+                  if(delaycnt == DELAY_CNT)
+                    begin
+                      sclk     <= ~sclk;
+                    end
+
+              // Increment or reset out clock diver counter
+              delaycnt <= (delaycnt < DELAY_CNT) ? delaycnt + 1'b1 : 4'b0;
+                
                 end
-            // Set the latch, make the YL-3 display the data
+
             ST_LATCH:
               begin
-                if(lchcnt < 2)
+                // Set the latch, make the YL-3 display the data
+                if(lchcnt < 3)
                   begin
+                    // Don't latch for 3 clk's
                     //$display("LCHCNT: %d", lchcnt);
                     lchcnt <= lchcnt + 1'b1;
                     state  <= ST_LATCH;
+                    slatch <= 1'b0;
+                  end
+                else if(lchcnt > 2 && lchcnt < 6)
+                  begin
+                    // Latch for 3 clk's
+                    lchcnt <= lchcnt + 1'b1;
+                    state  <= ST_LATCH;
+                    slatch <= 1'b1;
                   end
                 else
                   begin
-                    lchcnt <= 0;
+                    // No more latching
+                    lchcnt <= 1'b0;
+                    slatch <= 1'b0;
 
                     if(aidx < 8)
                       begin
+                        // Not done with our array (string), get next character
                         //$display("ST_LATCH -> ST_READCHR");
                         posreg  <= 8'b0;
                         chrreg  <= 8'b0;
-                        dataout <= 16'b1;                  
+                        dataout <= 16'b1;
                         state   <= ST_READCHR;
                       end
                     else
                       begin
+                        // We are done with our array (string) and let go back into ready mode.
                         //$display("ST_LATCH -> ST_READY");
                         loaded <= 1'b0;
                         state  <= ST_READY;
@@ -379,9 +416,6 @@ module driver_yl3(
         end
     end
  
-  // Assign the outputs.
-  assign ready  = (state == ST_READY && loaded == 0)  ? 1'b1                    : 1'b0;
-  assign sda    = (state == ST_SHIFT && bitcnt <  16) ? dataout[8'd15 - bitcnt] : 1'b0;
-  assign sclk   = (state == ST_SHIFT && bitcnt <  16) ? shift_clk               : 1'b0;
-  assign slatch = (state == ST_LATCH)                 ? 1'b1                    : 1'b0;
+  // Assign the ready state output.
+  assign ready  = (state == ST_READY && loaded == 0)  ? 1'b1 : 1'b0;
 endmodule
