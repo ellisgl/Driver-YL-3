@@ -25,7 +25,7 @@ module driver_yl3(
   output reg   slatch  // Serial latch (Display 
 );
 
-  localparam  DELAY_CNT    = 4'd5;       // "Clock Divider"
+  localparam  DELAY_CNT    = 4'd3;       // "Clock Divider"
   localparam  ST_READY     = 2'b00;      // Ready to load data
   localparam  ST_READCHR   = 2'b01;      // Read Character
   localparam  ST_SHIFT     = 2'b10;      // Shift Character
