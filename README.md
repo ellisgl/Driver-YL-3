@@ -5,4 +5,4 @@ Currenly there is an issue with the most far right digit is super bright.
 
 [See it in action!](https://www.youtube.com/watch?v=TBHh_up2X0k)
 
-[EDA Playgound](http://www.edaplayground.com/x/FrH)
+[EDA Playgound](http://www.edaplayground.com/x/GTY)
