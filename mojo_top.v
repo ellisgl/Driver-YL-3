@@ -3,31 +3,12 @@ module mojo_top(
     input clk,
     // Input from reset button (active low)
     input rst_n,
-    // cclk input from AVR, high when AVR is ready
-    input cclk,
-
-    // AVR SPI connections
-    output spi_miso,
-    input spi_ss,
-    input spi_mosi,
-    input spi_sck,
-    // AVR ADC channel select
-    output [3:0] spi_channel,
-    // Serial connections
-    input avr_tx, // AVR Tx => FPGA Rx
-    output avr_rx, // AVR Rx => FPGA Tx
-    input avr_rx_busy, // AVR Rx buffer full
-    
+   
     output DIO, // Data of YL-3
     output RCK, // Latch of YL-3
-    output SCK,  // Clock of Yl-3
-    output [7:0] led
+    output SCK  // Clock of Yl-3
     );
 
-  reg  [7:0]  ledreg    = 8'b0;
-  assign led            = ledreg;
-
-  reg         eno       = 1'b1;
   reg  [63:0] data;
   reg         load;
   reg  [2:0]  aidx      = 3'b0;
@@ -94,20 +75,15 @@ module mojo_top(
   assign str[5][6] = "O";
   assign str[5][7] = " ";
 
-  // these signals should be high-z when not used
-  assign spi_miso    = 1'bz;
-  assign avr_rx      = 1'bz;
-  assign spi_channel = 4'bzzzz;
-
-  driver_yl3 yl3_display(
-    .clk(clk),
-    .rst_n(rst_n),
-    .data(data),
-    .load(load),
-    .sclk(SCK),
-    .sda(DIO),
-    .slatch(RCK),
-    .ready(ready)
+  yl3 yl3_interface(
+    .CLK(clk),
+    .nRST(rst_n),
+    .DATA(data),
+    .LOAD(load),
+    .SCK(SCK),
+    .DIO(DIO),
+    .RCK(RCK),
+    .READY(ready)
   );
 
   always @(posedge clk)
@@ -118,41 +94,6 @@ module mojo_top(
 
           if(nxtcnt == 20'b0)
             begin
-              case(aidx)
-                0: 
-                  begin
-                    ledreg <= 8'b0000_0001;
-                  end
-                1: 
-                  begin
-                    ledreg <= 8'b0000_0010;
-                  end
-                2: 
-                  begin
-                    ledreg <= 8'b0000_0100;
-                  end
-                3: 
-                  begin
-                    ledreg <= 8'b0000_1000;
-                  end
-                4: 
-                  begin
-                    ledreg <= 8'b0001_0000;
-                  end
-                5: 
-                  begin
-                    ledreg <= 8'b0010_0000;
-                  end
-                6: 
-                  begin
-                    ledreg <= 8'b0100_0000;
-                  end
-                7: 
-                  begin
-                    ledreg <= 8'b1000_0000;
-                  end                  
-              endcase
-
               data   <= {str[aidx][0], str[aidx][1], str[aidx][2], str[aidx][3], str[aidx][4], str[aidx][5], str[aidx][6], str[aidx][7]};
               aidx   <= aidx + 1'b1;
               load   <= 1'b1;
