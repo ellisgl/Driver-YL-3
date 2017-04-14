@@ -75,7 +75,7 @@ module mojo_top(
   assign str[5][6] = "O";
   assign str[5][7] = " ";
 
-  yl3 yl3_interface(
+  yl3_interface yl3(
     .CLK(clk),
     .nRST(rst_n),
     .DATA(data),
