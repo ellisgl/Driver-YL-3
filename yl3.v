@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 /**
  * YL-3 Interface (http://www.dx.com/p/diy8-x-seven-segment-displays-module-for-arduino-595-driver-250813#.VoG5SPkrKHs)
+ * Modules based on diver_74hc595.v from Crazy_Bingo
  * CLK    = Clock from FPGA (50 MHz - Mojo V3)
  * nRST   = reset (inverted)
  * DATA   = 8x8 (64 bits of the array)
@@ -278,7 +279,7 @@ module yl3_interface(
                         end
                       "o":
                         begin
-                          chrreg <= 8'b1010_0011;
+                          chrreg <= 8'b1010_1011;
                         end
                       "P", "p":
                         begin
@@ -286,7 +287,7 @@ module yl3_interface(
                         end
                       "Q":
                         begin
-                          chrreg <= 8'b100_0000;
+                          chrreg <= 8'b0100_0000;
                         end
                       "q":
                         begin
@@ -314,7 +315,7 @@ module yl3_interface(
                         end
                       "°":
                         begin
-                          chrreg <= 8'b1001_1100;
+                          chrreg <= 8'bc;
                         end
                       ".":
                         begin
