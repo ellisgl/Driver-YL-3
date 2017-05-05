@@ -315,7 +315,7 @@ module yl3_interface(
                         end
                       "°":
                         begin
-                          chrreg <= 8'bc;
+                          chrreg <= 8'b1001_1100;
                         end
                       ".":
                         begin
