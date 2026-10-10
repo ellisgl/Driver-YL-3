@@ -90,7 +90,9 @@ module mojo_top(
     begin
       if(ready == 1'b1)
         begin
-         aidx <= (aidx == 3'd6) ? 3'd0 : aidx;
+          // aidx <= (aidx == 3'd6) ? 3'd0 : aidx;
+          // Corrected the aidx wrap-around condition to 3'd7 since there are 8 characters (0-7) in each string. 
+          aidx <= (aidx == 3'd7) ? 3'd0 : aidx;
 
           if(nxtcnt == 20'b0)
             begin
@@ -99,7 +101,7 @@ module mojo_top(
               load   <= 1'b1;
             end
 
-          nxtcnt <= (nxtcnt < nxt) ? nxtcnt + 1'b1 : nxtcnt <= 17'b0;
+          nxtcnt <= (nxtcnt < nxt) ? nxtcnt + 1'b1 : 17'b0;
         end
       else
         begin

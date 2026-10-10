@@ -24,17 +24,14 @@ module YL3_Shift_Register(
   input        CLK,
   input [15:0] DATA_IN,
   input        EN_IN,
-  output       RDY,
-  output       RCLK,
-  output       SRCLK,
+  output reg   RDY,
+  output reg   RCLK,
+  output reg   SRCLK,
   output       SER_OUT
 );
 
   // Registers and initial settings
   reg [16:0] shift = 0;
-  reg RCLK         = 0; 
-  reg SRCLK        = 0; 
-  reg RDY          = 1;
   
   
   //==============================================================================
@@ -64,7 +61,6 @@ module YL3_Shift_Register(
   //----------------------------ASSIGN THE SER_OUT--------------------------------
   //==============================================================================
   //The SER_OUT port can be thought of as a wire to the MSB of an 16-bit shift reg
-  wire   SER_OUT;
   assign SER_OUT = shift[16]; //shift data out using MSBF
   
   //==============================================================================
