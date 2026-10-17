@@ -1,6 +1,7 @@
-const int clock = 7; //SCK
-const int latch = 5; //RCK 
-const int data  = 6; //DIO
+const int data  = 2; //DIO
+const int clock = 4; //SCK
+const int latch = 7; //RCK 
+
 char str[7][8] = 
 {
   "   HELLO",
@@ -262,8 +263,9 @@ void loop()
       }
 
       digitalWrite(latch,LOW);
-      shiftOut(data, clock, MSBFIRST, digit[y]); // select all segments
+      // This module wants the segment byte first, then the digit select byte
       shiftOut(data, clock, MSBFIRST, chr); // display char
+      shiftOut(data, clock, MSBFIRST, digit[y]); // select digit
       digitalWrite(latch,HIGH);
     }
   }

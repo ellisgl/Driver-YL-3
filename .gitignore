@@ -1,0 +1,5 @@
+# Build outputs
+*.fs
+*.json
+# Logic analyzer captures
+*.csv
